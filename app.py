@@ -1,6 +1,6 @@
 import os
 import uuid
-import shutil
+import boto3
 
 import mysql.connector
 
@@ -11,7 +11,10 @@ from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
 
 load_dotenv()
+S3_BUCKET = os.getenv("S3_BUCKET")
+AWS_REGION = os.getenv("AWS_REGION")
 
+s3 = boto3.client("s3", region_name=AWS_REGION)
 
 app = FastAPI()
 
@@ -41,12 +44,11 @@ def create_post(content: str = Form(...), image: UploadFile = File(...)):
 
     filename = f"{uuid.uuid4()}{extension}"
 
-    upload_path = os.path.join("static", "uploads", filename)
+    s3.upload_fileobj(
+        image.file, S3_BUCKET, filename, ExtraArgs={"ContentType": image.content_type}
+    )
 
-    with open(upload_path, "wb") as buffer:
-        shutil.copyfileobj(image.file, buffer)
-
-    image_url = f"/static/uploads/{filename}"
+    image_url = f"https://{S3_BUCKET}.s3.{AWS_REGION}.amazonaws.com/{filename}"
 
     connection = get_db_connection()
     cursor = connection.cursor()
