@@ -13,6 +13,7 @@ from fastapi.templating import Jinja2Templates
 load_dotenv()
 S3_BUCKET = os.getenv("S3_BUCKET")
 AWS_REGION = os.getenv("AWS_REGION")
+CLOUDFRONT_DOMAIN = os.getenv("CLOUDFRONT_DOMAIN")
 
 s3 = boto3.client("s3", region_name=AWS_REGION)
 
@@ -48,7 +49,7 @@ def create_post(content: str = Form(...), image: UploadFile = File(...)):
         image.file, S3_BUCKET, filename, ExtraArgs={"ContentType": image.content_type}
     )
 
-    image_url = f"https://{S3_BUCKET}.s3.{AWS_REGION}.amazonaws.com/{filename}"
+    image_url = f"https://{CLOUDFRONT_DOMAIN}/{filename}"
 
     connection = get_db_connection()
     cursor = connection.cursor()
